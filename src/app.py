@@ -17,9 +17,13 @@ class Player(db.Model):
     skill = db.Column(db.Integer, nullable=False)
 
 class Guild(db.Model):
-    uid = db.Column(UUIDType(binary=False), primary_key=True)
+    uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(80), unique=True, nullable=False)
     country_code = db.Column(db.String(120), unique=True, nullable=True)
+
+class Item(db.Model):
+    uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
+    skill = db.Column(db.Integer, nullable=False)
 
 @app.route('/')
 def root():
@@ -27,7 +31,6 @@ def root():
 
 @app.route('/player/create/', methods=['POST'])
 def create_player():
-    # Validations
     try:
         nickname = request.json['nickname']
         email = request.json['email']
@@ -128,19 +131,42 @@ def delete_player():
         "success": "true"
     }), mimetype='application/json')
 
-@app.route('/guild/create/')
+@app.route('/guild/create/', methods=["POST"])
 def create_guild():
+    try:
+        name = request.json['name']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Create the Guild
+    country_code = request.json.get('country_code', '')
+    try:
+        guild = Guild(
+            name=name,
+            country_code=country_code,
+        )
+        db.session.add(guild)
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
     return Response(json.dumps({
         "success": "true"
     }), mimetype='application/json')
 
-@app.route('/guild/update/')
+@app.route('/guild/update/', methods=["POST"])
 def update_guild():
     return Response(json.dumps({
         "success": "true"
     }), mimetype='application/json')
 
-@app.route('/guild/delete/')
+@app.route('/guild/delete/', methods=["POST"])
 def delete_guild():
     return Response(json.dumps({
         "success": "true"
