@@ -15,11 +15,14 @@ class Player(db.Model):
     nickname = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     skill = db.Column(db.Integer, nullable=False)
+    guild_id = db.Column(UUIDType(binary=False), db.ForeignKey('guild.uid'),
+        nullable=True)
 
 class Guild(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(80), unique=True, nullable=False)
     country_code = db.Column(db.String(120), unique=True, nullable=True)
+    players = db.relationship('Player', backref='guild', lazy=True)
 
 class Item(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
