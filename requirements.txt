@@ -1,2 +1,4 @@
 Flask-SQLAlchemy
 psycopg2
+sqlalchemy-utils
+Flask-API
