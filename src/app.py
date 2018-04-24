@@ -199,6 +199,32 @@ def update_guild():
 
 @app.route('/guild/delete/', methods=["POST"])
 def delete_guild():
+    try:
+        uid = request.json['uid']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Query the player from db
+    guild = Guild.query.filter_by(uid=uuid.UUID(uid)).first()
+    if not guild:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Guild {} not found".format(uid)
+        }), mimetype='application/json', status=404)
+
+    # Delete the guild
+    try:
+        db.session.delete(guild)
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
     return Response(json.dumps({
         "success": "true"
     }), mimetype='application/json')
