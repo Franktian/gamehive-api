@@ -10,6 +10,11 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
+items_table = db.Table('items',
+    db.Column('player_id', UUIDType(binary=False), db.ForeignKey('player.uid')),
+    db.Column('item_id', UUIDType(binary=False), db.ForeignKey('item.uid'))
+)
+
 class Player(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     nickname = db.Column(db.String(80), nullable=False)
@@ -17,6 +22,7 @@ class Player(db.Model):
     skill = db.Column(db.Integer, nullable=False)
     guild_id = db.Column(UUIDType(binary=False), db.ForeignKey('guild.uid'),
         nullable=True)
+    items = db.relationship('Item', secondary=items_table)
 
 class Guild(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
