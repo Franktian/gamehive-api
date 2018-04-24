@@ -26,10 +26,9 @@ class Player(db.Model):
 
     def has_item(self, item_id):
         for item in self.items:
-            if item.uid == item_id:
+            if item.uid == uuid.UUID(item_id):
                 return True
         return False
-
 
 class Guild(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
@@ -51,7 +50,7 @@ class Item(db.Model):
 def root():
     return 'Game Hive Player API'
 
-@app.route('/player/add-item', methods=['POST'])
+@app.route('/player/add-item/', methods=['POST'])
 def add_item_to_player():
     try:
         player_id = request.json['player_id']
@@ -78,8 +77,8 @@ def add_item_to_player():
 
         # Check for other players in the same Guild has the same item
         for p in player.guild.players:
-            if p.uid != player_id and p.has_item(item_id):
-                p.skll -= item.skill
+            if p.uid != uuid.UUID(player_id) and p.has_item(item_id):
+                p.skill -= item.skill
 
         db.session.commit()
 
@@ -88,6 +87,10 @@ def add_item_to_player():
             "success": "false",
             "message": "{}".format(error)
         }), mimetype='application/json', status=500)
+
+    return Response(json.dumps({
+        "success": "true"
+    }), mimetype='application/json', status=200)
 
 @app.route('/player/add-to-guild/', methods=['POST'])
 def add_player_to_guild():
