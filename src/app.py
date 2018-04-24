@@ -162,6 +162,37 @@ def create_guild():
 
 @app.route('/guild/update/', methods=["POST"])
 def update_guild():
+    try:
+        uid = request.json['uid']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Query the guild from db
+    guild = Guild.query.filter_by(uid=uuid.UUID(uid)).first()
+    if not guild:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Guild {} not found".format(uid)
+        }), mimetype='application/json', status=404)
+
+    # Get info to update, if didn't find from request, don't update
+    name = request.json.get('name', guild.name)
+    country_code = request.json.get('country_code', guild.country_code)
+
+    # Update guild information
+    try:
+        guild.name = name
+        guild.country_code = country_code
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
     return Response(json.dumps({
         "success": "true"
     }), mimetype='application/json')
