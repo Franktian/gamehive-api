@@ -16,12 +16,34 @@ items_table = db.Table('items',
 )
 
 class Player(db.Model):
-    uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
-    nickname = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    skill = db.Column(db.Integer, nullable=False)
-    guild_id = db.Column(UUIDType(binary=False), db.ForeignKey('guild.uid'),
-        nullable=True)
+    uid = db.Column(
+        UUIDType(binary=False),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+
+    nickname = db.Column(
+        db.String(80),
+        nullable=False
+    )
+
+    email = db.Column(
+        db.String(120),
+        unique=True,
+        nullable=False
+    )
+
+    skill = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    guild_id = db.Column(
+        UUIDType(binary=False),
+        db.ForeignKey('guild.uid'),
+        nullable=True
+    )
+
     items = db.relationship('Item', secondary=items_table)
 
     def has_item(self, item_id):
@@ -31,9 +53,22 @@ class Player(db.Model):
         return False
 
 class Guild(db.Model):
-    uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
-    name = db.Column(db.String(80), unique=True, nullable=False)
-    country_code = db.Column(db.String(120), unique=True, nullable=True)
+    uid = db.Column(
+        UUIDType(binary=False),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+
+    name = db.Column(
+        db.String(80),
+        nullable=False
+    )
+
+    country_code = db.Column(
+        db.String(120),
+        nullable=True
+    )
+
     players = db.relationship('Player', backref='guild', lazy=True)
 
     def get_total_skill(self):
@@ -43,8 +78,17 @@ class Guild(db.Model):
         return total
 
 class Item(db.Model):
-    uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
-    skill = db.Column(db.Integer, nullable=False)
+    uid = db.Column(
+        UUIDType(binary=False),
+        primary_key=True,
+        default=uuid.uuid4
+    )
+
+    skill = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
 
 @app.route('/')
 def root():
@@ -76,9 +120,10 @@ def add_item_to_player():
         player.skill += item.skill
 
         # Check for other players in the same Guild has the same item
-        for p in player.guild.players:
-            if p.uid != uuid.UUID(player_id) and p.has_item(item_id):
-                p.skill -= item.skill
+        if player.guild:
+            for p in player.guild.players:
+                if p.uid != uuid.UUID(player_id) and p.has_item(item_id):
+                    p.skill -= item.skill
 
         db.session.commit()
 
