@@ -32,6 +32,40 @@ class Item(db.Model):
 def root():
     return 'Game Hive Player API'
 
+@app.route('/player/add-to-guild/', methods=['POST'])
+def add_player_to_guild():
+    try:
+        player_id = request.json['player_id']
+        guild_id = request.json['guild_id']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    player = Player.query.filter_by(uid=uuid.UUID(player_id)).first()
+    guild = Guild.query.filter_by(uid=uuid.UUID(guild_id)).first()
+
+    if not player or not guild:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Player {}, Guild {} not found".format(player_id, guild_id)
+        }), mimetype='application/json', status=404)
+
+    # Add player to guild
+    try:
+        guild.players.append(player)
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
+    return Response(json.dumps({
+        "success": "true"
+    }), mimetype='application/json', status=200)
+
 @app.route('/player/create/', methods=['POST'])
 def create_player():
     try:
