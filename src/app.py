@@ -11,13 +11,13 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 
 class Player(db.Model):
-    id = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
-    nickname = db.Column(db.String(80), unique=True, nullable=False)
+    uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
+    nickname = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     skill = db.Column(db.Integer, nullable=False)
 
 class Guild(db.Model):
-    id = db.Column(UUIDType(binary=False), primary_key=True)
+    uid = db.Column(UUIDType(binary=False), primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
     country_code = db.Column(db.String(120), unique=True, nullable=True)
 
@@ -27,6 +27,7 @@ def root():
 
 @app.route('/player/create/', methods=['POST'])
 def create_player():
+    # Validations
     try:
         nickname = request.json['nickname']
         email = request.json['email']
@@ -37,6 +38,7 @@ def create_player():
             "message": "{}".format(error)
         }), mimetype='application/json', status=400)
 
+    # Create the player
     try:
         player = Player(
             nickname=nickname,
@@ -55,8 +57,41 @@ def create_player():
         "success": "true"
     }), mimetype='application/json', status=200)
 
-@app.route('/player/update/')
+@app.route('/player/update/', methods=['POST'])
 def update_player():
+    try:
+        uid = request.json['uid']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Query the player from db
+    player = Player.query.filter_by(uid=uuid.UUID(uid)).first()
+    if not player:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Player {} not found".format(uid)
+        }), mimetype='application/json', status=404)
+
+    # Get info to update, if didn't find from request, don't update
+    nickname = request.json.get('nickname', player.nickname)
+    email = request.json.get('email', player.email)
+    skill = request.json.get('skill', player.skill)
+
+    # Update player information
+    try:
+        player.nickname = nickname
+        player.email = email
+        player.skill = skill
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
     return Response(json.dumps({
         "success": "true"
     }), mimetype='application/json')
