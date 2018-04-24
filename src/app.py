@@ -229,5 +229,65 @@ def delete_guild():
         "success": "true"
     }), mimetype='application/json')
 
+@app.route('/item/create/', methods=["POST"])
+def create_item():
+    try:
+        skill = request.json['skill']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Create the item
+    try:
+        item = Item(
+            skill=skill,
+        )
+        db.session.add(item)
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
+    return Response(json.dumps({
+        "success": "true"
+    }), mimetype='application/json')
+
+@app.route('/item/update/', methods=["POST"])
+def update_item():
+    try:
+        uid = request.json['uid']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Query the item from db
+    item = Item.query.filter_by(uid=uuid.UUID(uid)).first()
+    if not item:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Item {} not found".format(uid)
+        }), mimetype='application/json', status=404)
+
+    skill = request.json.get('skill', item.skill)
+    # Update item information
+    try:
+        item.skill = skill
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
+    return Response(json.dumps({
+        "success": "true"
+    }), mimetype='application/json')
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
