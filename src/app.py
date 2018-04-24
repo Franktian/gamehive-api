@@ -24,6 +24,13 @@ class Player(db.Model):
         nullable=True)
     items = db.relationship('Item', secondary=items_table)
 
+    def has_item(self, item_id):
+        for item in self.items:
+            if item.uid == item_id:
+                return True
+        return False
+
+
 class Guild(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     name = db.Column(db.String(80), unique=True, nullable=False)
@@ -43,6 +50,44 @@ class Item(db.Model):
 @app.route('/')
 def root():
     return 'Game Hive Player API'
+
+@app.route('/player/add-item', methods=['POST'])
+def add_item_to_player():
+    try:
+        player_id = request.json['player_id']
+        item_id = request.json['item_id']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    player = Player.query.filter_by(uid=uuid.UUID(player_id)).first()
+    item = Item.query.filter_by(uid=uuid.UUID(item_id)).first()
+
+    if not player or not item:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Player {}, Item {} not found".format(player_id, item_id)
+        }), mimetype='application/json', status=404)
+
+    # Add item to player and update skill score
+    try:
+        player.items.append(item)
+        player.skill += item.skill
+
+        # Check for other players in the same Guild has the same item
+        for p in player.guild.players:
+            if p.uid != player_id and p.has_item(item_id):
+                p.skll -= item.skill
+
+        db.session.commit()
+
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
 
 @app.route('/player/add-to-guild/', methods=['POST'])
 def add_player_to_guild():
