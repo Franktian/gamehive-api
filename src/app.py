@@ -96,8 +96,34 @@ def update_player():
         "success": "true"
     }), mimetype='application/json')
 
-@app.route('/player/delete/')
+@app.route('/player/delete/', methods=["POST"])
 def delete_player():
+    try:
+        uid = request.json['uid']
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=400)
+
+    # Query the player from db
+    player = Player.query.filter_by(uid=uuid.UUID(uid)).first()
+    if not player:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Player {} not found".format(uid)
+        }), mimetype='application/json', status=404)
+
+    # Delete the player
+    try:
+        db.session.delete(player)
+        db.session.commit()
+    except Exception as error:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "{}".format(error)
+        }), mimetype='application/json', status=500)
+
     return Response(json.dumps({
         "success": "true"
     }), mimetype='application/json')
