@@ -24,6 +24,12 @@ class Guild(db.Model):
     country_code = db.Column(db.String(120), unique=True, nullable=True)
     players = db.relationship('Player', backref='guild', lazy=True)
 
+    def get_total_skill(self):
+        total = 0
+        for p in self.players:
+            total += p.skill
+        return total
+
 class Item(db.Model):
     uid = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     skill = db.Column(db.Integer, nullable=False)
@@ -166,6 +172,20 @@ def delete_player():
 
     return Response(json.dumps({
         "success": "true"
+    }), mimetype='application/json')
+
+@app.route('/guild/<uid>/skill-points', methods=["GET"])
+def get_guild_skill_points(uid):
+    guild = Guild.query.filter_by(uid=uuid.UUID(uid)).first()
+    if not guild:
+        return Response(json.dumps({
+            "success": "false",
+            "message": "Guild {} not found".format(uid)
+        }), mimetype='application/json', status=404)
+
+    return Response(json.dumps({
+        "success": "true",
+        "skillPoints": guild.get_total_skill()
     }), mimetype='application/json')
 
 @app.route('/guild/create/', methods=["POST"])
